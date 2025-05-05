@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { createReadStream, createWriteStream } from 'node:fs';
+import {createReadStream, createWriteStream} from 'node:fs';
+import os from 'node:os';
 
 export async function handleCommand(command, currentDir, updateDir) {
   const [cmd, ...args] = command.trim().split(/\s+/);
@@ -148,6 +149,44 @@ export async function handleCommand(command, currentDir, updateDir) {
         await fs.unlink(filePath);
       } catch {
         console.log('Operation failed');
+      }
+      break;
+    }
+      
+    case 'os': {
+      if (!args[0]) {
+        console.log('Invalid input');
+        return;
+      }
+
+      switch (args[0]) {
+        case '--EOL':
+          console.log(JSON.stringify(os.EOL));
+          break;
+
+        case '--cpus': {
+          const cpus=os.cpus();
+          console.log(`Overall CPUs: ${cpus.length}`);
+          cpus.forEach((cpu, index) => {
+            console.log(`CPU ${index+1}: ${cpu.model}, ${cpu.speed/1000} GHz`);
+          });
+          break;
+        }
+
+        case '--homedir':
+          console.log(os.homedir());
+          break;
+
+        case '--username':
+          console.log(os.userInfo().username);
+          break;
+
+        case '--architecture':
+          console.log(os.arch());
+          break;
+
+        default:
+          console.log('Invalid input');
       }
       break;
     }
