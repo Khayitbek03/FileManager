@@ -1,4 +1,6 @@
 import readline from 'readline';
+import os from 'os';
+import { handleCommand } from './commandsHandler.js';
 
 const username = process.argv
   .find((arg) => arg.startsWith('--username='))
@@ -11,7 +13,7 @@ if (!username) {
 
 console.log(`Welcome to the File Manager, ${username}!`);
 
-let currentDir = process.cwd();
+let currentDir = os.homedir();
 
 function printCurrentDirectory() {
   console.log(`You are currently in ${currentDir}`);
@@ -26,14 +28,20 @@ rl.prompt();
 
 rl.on('line', async (input) => {
   const command = input.trim();
-  
+
   if (command === '.exit') {
     console.log(`Thank you for using File Manager, ${username}, goodbye!`);
     process.exit(0);
   }
 
-  console.log(`Received command: ${command}`);
-  
+  try {
+    await handleCommand(command, currentDir, (newDir) => {
+      currentDir = newDir;
+    });
+  } catch (err) {
+    console.log('Operation failed');
+  }
+
   printCurrentDirectory();
   rl.prompt();
 });
@@ -42,4 +50,3 @@ rl.on('SIGINT', () => {
   console.log(`\nThank you for using File Manager, ${username}, goodbye!`);
   process.exit();
 });
-
