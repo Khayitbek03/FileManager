@@ -1,16 +1,15 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { createReadStream } from 'node:fs';
+import { createReadStream, createWriteStream } from 'node:fs';
 
 export async function handleCommand(command, currentDir, updateDir) {
-  const [cmd, ...args] = command.split(' ');
+  const [cmd, ...args] = command.trim().split(/\s+/);
 
   switch (cmd) {
     case 'up': {
       const parentDir = path.dirname(currentDir);
       if (parentDir !== currentDir) {
         updateDir(parentDir);
-        await listDirectory(parentDir);
       }
       break;
     }
@@ -83,6 +82,76 @@ export async function handleCommand(command, currentDir, updateDir) {
       }
       break;
     }
+    case 'mkdir': {
+      if (!args[0]) {
+        console.log('Invalid input');
+        return;
+      }
+      const dirPath=path.resolve(currentDir, args[0]);
+      try {
+        await fs.mkdir(dirPath);
+      } catch {
+        console.log('Operation failed');
+      }
+      break;
+    }
+    case 'cp': {
+      if (args.length < 2) {
+        console.log('Invalid input');
+        return;
+      }
+      const srcPath = path.resolve(currentDir, args[0]);
+      const destPath = path.resolve(currentDir, args[1], path.basename(srcPath));
+      try {
+        await fs.access(srcPath);
+        const readStream = createReadStream(srcPath);
+        const writeStream = createWriteStream(destPath);
+        readStream.pipe(writeStream);
+        readStream.on('error', () => console.log('Operation failed'));
+        writeStream.on('error', () => console.log('Operation failed'));
+      } catch {
+        console.log('Operation failed');
+      }
+      break;
+    }
+
+    case 'mv': {
+      if (args.length < 2) {
+        console.log('Invalid input');
+        return;
+      }
+      const srcPath = path.resolve(currentDir, args[0]);
+      const destPath = path.resolve(currentDir, args[1], path.basename(srcPath));
+      try {
+        await fs.access(srcPath);
+        const readStream = createReadStream(srcPath);
+        const writeStream = createWriteStream(destPath);
+        readStream.pipe(writeStream);
+        readStream.on('end', async () => {
+          await fs.unlink(srcPath);
+        });
+        readStream.on('error', () => console.log('Operation failed'));
+        writeStream.on('error', () => console.log('Operation failed'));
+      } catch {
+        console.log('Operation failed');
+      }
+      break;
+    }
+
+    case 'rm': {
+      if (!args[0]) {
+        console.log('Invalid input');
+        return;
+      }
+      const filePath = path.resolve(currentDir, args[0]);
+      try {
+        await fs.unlink(filePath);
+      } catch {
+        console.log('Operation failed');
+      }
+      break;
+    }
+
 
 
     default:
